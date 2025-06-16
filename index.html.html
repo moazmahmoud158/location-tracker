@@ -1,0 +1,121 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Location Tracker</title>
+<link href="https://fonts.googleapis.com/css2?family=Inter&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.3/dist/leaflet.css"
+ integrity="sha256-sA+12Zr+F+0GIcRuRzRbntMsPbGk+kYqlUlP+jKfYfY="
+ crossorigin=""/>
+<style>
+  body {
+    margin: 0;
+    font-family: 'Inter', sans-serif;
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    background: #f9fafb;
+    color: #111827;
+    text-align: center;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 2rem;
+    margin-bottom: 12px;
+    color: #059669;
+  }
+  #status {
+    margin-bottom: 20px;
+    font-size: 1.1rem;
+  }
+  #location {
+    margin-bottom: 20px;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: #047857;
+  }
+  #map {
+    height: 60vh;
+    border-radius: 16px;
+    box-shadow: 0 4px 12px rgba(5, 150, 105, 0.3);
+    max-width: 900px;
+    margin: 0 auto;
+  }
+  #permissionRequest {
+    font-size: 1rem;
+    color: #6b7280;
+    margin-top: 20px;
+  }
+
+  @media (max-width: 640px) {
+    #map {
+      height: 50vh;
+      width: 100%;
+      padding: 0 10px;
+    }
+  }
+</style>
+</head>
+<body>
+<h1>Your Location Tracker</h1>
+<div id="status" aria-live="polite">Requesting location permission...</div>
+<div id="location" aria-label="User  coordinates"></div>
+<div id="map" role="region" aria-label="Map showing your location"></div>
+<div id="permissionRequest" hidden>Location permission is required to show your location on the map.</div>
+
+<script src="https://unpkg.com/leaflet@1.9.3/dist/leaflet.js"
+ integrity="sha256-o8F8LAX2j+yzYvf9e4Dac7z3HbdibaYXKaLzy9tHAtU="
+ crossorigin=""></script>
+<script>
+  const statusEl = document.getElementById('status');
+  const locationEl = document.getElementById('location');
+  const permissionRequestEl = document.getElementById('permissionRequest');
+  let map, marker;
+
+  function initMap(lat, lng) {
+    if (!map) {
+      map = L.map('map').setView([lat, lng], 13);
+      L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        maxZoom: 19,
+        attribution: '&copy; OpenStreetMap contributors'
+      }).addTo(map);
+      marker = L.marker([lat, lng]).addTo(map)
+        .bindPopup('You are here')
+        .openPopup();
+    } else {
+      map.setView([lat, lng], 13);
+      marker.setLatLng([lat, lng]);
+      marker.openPopup();
+    }
+  }
+
+  function success(position) {
+    const latitude = position.coords.latitude.toFixed(6);
+    const longitude = position.coords.longitude.toFixed(6);
+    statusEl.textContent = 'Location found:';
+    locationEl.textContent = `Latitude: ${latitude}, Longitude: ${longitude}`;
+    permissionRequestEl.hidden = true;
+    initMap(latitude, longitude);
+  }
+
+  function error(err) {
+    console.warn(`ERROR(${err.code}): ${err.message}`);
+    statusEl.textContent = 'Unable to retrieve your location.';
+    locationEl.textContent = '';
+    permissionRequestEl.hidden = false;
+  }
+
+  if (!navigator.geolocation) {
+    statusEl.textContent = 'Geolocation is not supported by your browser.';
+    permissionRequestEl.hidden = false;
+  } else {
+    navigator.geolocation.getCurrentPosition(success, error, {
+      enableHighAccuracy: true,
+      timeout: 10000,
+      maximumAge: 0
+    });
+  }
+</script>
+</body>
+</html>
